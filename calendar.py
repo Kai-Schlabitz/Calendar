@@ -1,4 +1,4 @@
-"""This Program allows user to enter a year and a month and display its repectivite calender.
+"""This Program allows user to enter a year and a month and display its repective calender.
 The Program is based on a concept called Zeller's Congruence """
 
 import sys
@@ -28,22 +28,45 @@ def print3(i, a, b, c):  # Defining Function for 3rd print statement
         print("\n", end="")
 
 
-def main():
-    # taking A year from the user
-    year = int(input("Enter the year of which calender is required: "))
+def get_user_input():
+    """
+    This function asks the user for the year and month of the calendar that
+    should be generated. It then makes sure that the month is a number
+    between 1 and 12 and returns the year and the month.
+    """
+    input_year = int(input("Enter the year of which calender is required: "))
+    input_month = int(input(
+    "Enter the month of which calender "
+    "is required as a number between 1 and 12: "
+    ))
 
-    # taking A month from the user
-    month = int(input("Enter the month of which calender is required: "))
-
-    month_is_invalid = not 1 <= month <= 12
+    month_is_invalid = not 1 <= input_month <= 12
     if month_is_invalid:
         print("Please only enter a number between 1 and 12 for the month.")
         sys.exit()
 
+    # In the concept of Zeller congruence,
+    # January is counted as the 11th month of the last year,
+    # February is the 12th month of the last year,
+    # and March is the 1st month of the current year.
+    if input_month == 1:
+        return input_year - 1, 11
+
+    if input_month == 2:
+        return input_year - 1, 12
+
+    return input_year, input_month - 2
+
+def main():
+    year, month = get_user_input()
+
+    # adjust the number of days in february for leap years
+    year_is_leap_year = year % 4 == 0
+    
     # A dict for the number of days present in a month
     month_day_dict = {
         1: 31,
-        2: 28,
+        2: 28 + int(year_is_leap_year),
         3: 31,
         4: 30,
         5: 31,
@@ -53,39 +76,24 @@ def main():
         9: 30,
         10: 31,
         11: 30,
-        12: 31,
+        12: 31
     }
-
-    # adjust the number of days in february for leap years
-    year_is_leap_year = year % 4 == 0
-    if year_is_leap_year:
-        days[2] = 29
 
     days = month_day_dict[month]  # the number days present in the chosen month
 
-    # In the concept of Zeller congruence,
-    # January is counted as the 11th month of the last year,
-    # February is the 12th month of the last year,
-    # and March is the 1st month of the current year.
-    if month == 1:
-        year -= 1
-        month = 11
-    elif month == 2:
-        year -= 1
-        month = 12
-    elif month > 2:
-        month -= 2
-
+    years_per_century = 100
+    leap_year_period = 4
+    
     # https://en.wikipedia.org/wiki/Zeller%27s_congruence
     # Calculations below are based on zeller congruence
     m = (13 * month - 1) // 5
-    d = year % 100
-    c = year // 100
-    third = d // 4
-    fourth = c // 4
-    fifth = 2 * c
+    year_of_century = year % years_per_century
+    zero_based_century = year // years_per_century
+    leap_year_offset = year_of_century // leap_year_period
+    weekday_progression_offset = zero_based_century // leap_year_period - 2 * zero_based_century
 
     monday, tuesday, wednesday, thursday, friday, saturday, sunday = (
+        [],
         [],
         [],
         [],
@@ -97,7 +105,7 @@ def main():
 
     weekdays = (sunday, monday, tuesday, wednesday, thursday, friday, saturday)
 
-    equation = (1 + m + d + third + fourth - fifth) % 7
+    equation = (1 + m + year_of_century + leap_year_offset + weekday_progression_offset) % 7
     weekdays[equation].append(1)
 
     print("Sun Mon Tue Wed Thu Fri Sat")  # printing Header of the calender
